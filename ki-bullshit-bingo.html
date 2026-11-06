@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KI-Bullshit-Bingo – Enterprise AI Edition</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#1d2448;background:#f5f2ff}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 12% 8%,#ffe6f2 0,transparent 35%),radial-gradient(circle at 90% 15%,#d7f8f1 0,transparent 35%),linear-gradient(145deg,#f6f2ff,#eef5ff);min-height:100vh}
+.wrap{max-width:900px;margin:auto;padding:30px 18px 40px}
+header{text-align:center;background:#fff9;border:1px solid #fff;border-radius:24px;padding:20px 16px;box-shadow:0 12px 32px #4938a112}
+h1{font-size:clamp(2rem,5vw,3.3rem);margin:4px 0 8px;color:#4d2db4;letter-spacing:-.045em}
+header strong{color:#c33788}
+p{line-height:1.45}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:22px 0}
+button{font:inherit;cursor:pointer}
+.action{border:0;border-radius:14px;padding:12px 18px;background:linear-gradient(125deg,#6434c6,#b348c4);color:#fff;font-weight:750;box-shadow:0 5px 14px #6736a72a;transition:transform .15s,filter .15s}
+.action.secondary{background:#fff;color:#55339e;border:2px solid #d7c9fa;box-shadow:none}
+.action.confirm{background:#c33788;color:#fff;border-color:#c33788}
+.action:focus-visible,.cell:focus-visible{outline:3px solid #c33788;outline-offset:2px}
+.status{text-align:center;min-height:1.5em;font-weight:800;color:#7037bb;font-size:1.1rem;margin:0}
+.card-id{text-align:center;color:#6a7186;font-size:.9rem;margin:4px 0 0}
+.card-id code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;color:#4d2db4;letter-spacing:.08em}
+.board{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;max-width:780px;margin:16px auto;padding:12px;border-radius:22px;background:#ffffffb8;box-shadow:0 12px 32px #34256a16}
+.cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;aspect-ratio:1/1;min-width:0;overflow-wrap:break-word;hyphens:auto;border:2px solid transparent;border-radius:13px;color:#253052;padding:5px;font-weight:750;font-size:clamp(.65rem,1.75vw,1rem);text-align:center;line-height:1.18;transition:transform .12s,filter .12s;position:relative}
+.cell:nth-child(5n+1){background:#e5dcff;border-color:#c7b3ff}
+.cell:nth-child(5n+2){background:#d5f4f0;border-color:#9fe0d5}
+.cell:nth-child(5n+3){background:#ffe3ef;border-color:#ffb7d5}
+.cell:nth-child(5n+4){background:#fff0c9;border-color:#f7d987}
+.cell:nth-child(5n){background:#dceaff;border-color:#b4ceff}
+.cell .term-icon{width:34%;height:34%;max-width:45px;max-height:45px;min-height:19px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.cell .term-label{display:block;max-width:100%}
+@media (hover:hover){.action:hover{transform:translateY(-2px);filter:brightness(1.05)}.cell:hover:not(:disabled){transform:scale(1.035);filter:saturate(1.2)}}
+.cell.marked{background:#6139b8!important;border-color:#43238f!important;color:#fff!important;box-shadow:inset 0 0 0 2px #ffffff55}
+.cell.marked:not(.free)::after{content:'✓';position:absolute;top:3px;right:7px;font-size:.9rem;color:#fff}
+.cell.win:not(.free){background:#c33788!important;border-color:#8f1f5f!important}
+.cell.free{background:linear-gradient(140deg,#f5c9ff,#d6b8ff)!important;border:2px dashed #8445ba!important;color:#43216f!important;font-weight:900;cursor:default}
+.instructions{text-align:center;color:#4d5570;max-width:760px;margin:18px auto;font-weight:550}
+.foot{text-align:center;color:#6a7186;font-size:.85rem}
+.hint{display:none;text-align:center;color:#6a7186;font-size:.85rem;margin:-10px 0 14px}
+.author{margin-top:15px;text-align:center;font-size:.9rem}
+.author-link{display:inline-flex;align-items:center;gap:7px;color:#4d2db4;font-weight:700;text-decoration:none}
+.author-link:hover{text-decoration:underline}
+.author svg{width:17px;height:17px;fill:currentColor}
+.author-print,.print-only{display:none}
+noscript p{text-align:center;font-weight:700;color:#c33788}
+@media(max-width:480px){
+ .wrap{padding:12px 6px}
+ .board{gap:4px;padding:5px;border-radius:12px}
+ .cell{border-width:1px;border-radius:6px;font-size:clamp(.58rem,2.6vw,.75rem);padding:2px;gap:2px;hyphens:auto}
+ .cell .term-icon{min-height:12px;width:28%;height:28%}
+ .cell.marked:not(.free)::after{font-size:.6rem;right:2px;top:0}
+ header{padding:15px 9px}
+}
+@media print{
+ @page{size:A4 portrait;margin:12mm}
+ body{background:#fff;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .wrap{max-width:none;padding:0}
+ header{box-shadow:none;border:0;padding:0}
+ h1{font-size:23pt}
+ header p{font-size:11pt}
+ .toolbar,.status,.foot,.hint,.card-id,noscript{display:none!important}
+ .author{margin-top:7mm;font-size:9pt}
+ .author-link{color:#333}
+ .author svg{display:none}
+ .author-print{display:inline}
+ .board{gap:2mm;max-width:none;margin:12mm auto 5mm;padding:0;box-shadow:none;background:#fff}
+ .cell{border:1.2pt solid #777;border-radius:4pt;color:#1d2448;font-size:9pt;break-inside:avoid;box-shadow:none;gap:5pt}
+ .cell .term-icon{width:29%;height:29%;max-width:34pt;max-height:34pt}
+ .cell.marked,.cell.win{background:#e2d5ff!important;color:#1d2448!important}
+ .cell.marked::after{display:none}
+ .cell.free{background:#dfc5ff!important}
+ .instructions{font-size:10pt}
+ .print-only{display:block;text-align:center;font-size:10pt}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+ <header>
+  <h1>KI-Bullshit-Bingo</h1>
+  <p><strong>Enterprise AI Edition</strong><br>Für Meetings, in denen Buzzwords manchmal schneller sind als der Use Case.</p>
+ </header>
+
+ <div class="toolbar">
+  <button class="action" id="new" type="button">↻ Neue Karte</button>
+  <button class="action secondary" id="print" type="button">⎙ Drucken / PDF</button>
+  <button class="action secondary" id="reset" type="button">Markierungen löschen</button>
+ </div>
+ <p class="hint" id="printHint">Drucken ist in dieser eingebetteten Ansicht gesperrt – Seite in einem eigenen Tab öffnen und dort drucken.</p>
+
+ <p class="status" id="status" aria-live="polite"></p>
+ <p class="card-id">Karte <code id="cardId">——</code></p>
+
+ <noscript><p>Für das Bingo muss JavaScript aktiviert sein.</p></noscript>
+ <section class="board" id="board" aria-label="Bingo-Karte"></section>
+
+ <p class="instructions">Begriff fällt ohne konkreten Bezug zum eigentlichen Problem? Feld anklicken. Fünf in einer Reihe (waagerecht, senkrecht oder diagonal) ergeben BINGO!</p>
+ <p class="print-only">Karte <span id="printId"></span> · Fünf in einer Reihe ergeben BINGO!</p>
+ <p class="foot">Jede Karte zieht 24 Begriffe zufällig aus einem größeren Pool; das mittlere Feld ist frei. Gleiche Karten-ID = gleiche Karte. Läuft vollständig lokal im Browser – keine Daten verlassen dein Gerät.</p>
+
+ <footer class="author">
+  <a class="author-link" href="https://www.linkedin.com/in/christoph-kempkes/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn-Profil von Christoph Kempkes öffnen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 2H3.55C2.69 2 2 2.68 2 3.52v16.96c0 .84.69 1.52 1.55 1.52h16.9c.86 0 1.55-.68 1.55-1.52V3.52c0-.84-.69-1.52-1.55-1.52ZM7.93 18.75H4.98V9.2h2.95v9.55ZM6.46 7.89a1.71 1.71 0 1 1 0-3.42 1.71 1.71 0 0 1 0 3.42Zm12.3 10.86h-2.94V14.1c0-1.11-.02-2.54-1.55-2.54-1.55 0-1.79 1.21-1.79 2.46v4.73H9.54V9.2h2.82v1.3h.04c.39-.74 1.35-1.52 2.78-1.52 2.97 0 3.52 1.95 3.52 4.48v5.29Z"/></svg>Christoph Kempkes auf LinkedIn</a><span class="author-print"> · linkedin.com/in/christoph-kempkes</span>
+ </footer>
+</main>
+
+<script>
+"use strict";
+
+/* ---------- Begriffe ---------- */
+const pool=["Agentic AI","RAG","Human in the Loop","Multi-Agent Systems","AI Governance","MCP","Vector Database","AI Agents","Prompt Engineering","Guardrails","AI Orchestration","Fine-Tuning","Semantic Search","AI Readiness","Embeddings","AI-Native","LLM-as-a-Judge","Knowledge Graph","AI Transformation","Use Case Discovery","Model-Agnostic","AI Workflow","Responsible AI","Proof of Concept","AI Strategy","Copilot","AI Enablement","AI Adoption","AI Literacy","Enterprise AI","AI Platform","AI Operating Model","Data Readiness","AI Roadmap","AI Center of Excellence","AI Factory","AI at Scale","Retrieval-Augmented Generation","Foundation Model","Generative AI","Tool Calling","AI Automation","AI-Powered","Prompt Library","AI Use Cases","Model Evaluation","Trustworthy AI","AI Integration","Context Engineering","Vibe Coding","AI-First","AI Ecosystem"];
+
+/* Begriffe, die dasselbe meinen: höchstens einer davon pro Karte. */
+const sameMeaning=[["RAG","Retrieval-Augmented Generation"],["Agentic AI","AI Agents"],["AI Use Cases","Use Case Discovery"]];
+
+/* ---------- Icons (eingebettete SVG-Piktogramme, keine externen Ressourcen) ---------- */
+const shapes={
+ bot:'<rect x="5" y="7" width="14" height="12" rx="3"/><path d="M12 3v4M9 3h6M5 11H3m18 0h-2"/><circle cx="9" cy="13" r="1"/><circle cx="15" cy="13" r="1"/>',
+ database:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/>',
+ person:'<circle cx="10" cy="7" r="3"/><path d="M3 20c0-5 3-7 7-7m4 4 2 2 5-6"/>',
+ network:'<circle cx="12" cy="4" r="2"/><circle cx="4" cy="19" r="2"/><circle cx="20" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><path d="M11 6 5 17m8-11 6 11m-13 2h4m4 0h4"/>',
+ shield:'<path d="M12 2 20 5v6c0 6-4 9-8 11-4-2-8-5-8-11V5z"/><path d="m8 12 3 3 5-6"/>',
+ plug:'<path d="M8 3v5m8-5v5M6 8h12v3a6 6 0 0 1-12 0zm6 9v5"/>',
+ search:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',
+ spark:'<path d="m12 2 2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5z"/>',
+ chat:'<path d="M4 4h16v12H9l-5 4z"/><path d="M8 9h8m-8 4h5"/>',
+ sliders:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="11" cy="18" r="2" fill="currentColor" stroke="none"/>',
+ nodes:'<rect x="2" y="3" width="7" height="6" rx="1"/><rect x="15" y="3" width="7" height="6" rx="1"/><rect x="8" y="16" width="8" height="6" rx="1"/><path d="M6 9v3h12V9m-6 3v4"/>',
+ wrench:'<path d="M14 3a7 7 0 0 0-8 9L2 16l6 6 4-4a7 7 0 0 0 9-8l-5 5-5-5z"/>',
+ graph:'<path d="M3 20h18M4 17l5-6 4 3 7-9"/><path d="M16 5h4v4"/>',
+ brain:'<path d="M12 5c-4-5-10 0-7 5-5 3-2 10 3 9 1 3 4 3 4 0V5zm0 0c4-5 10 0 7 5 5 3 2 10-3 9-1 3-4 3-4 0V5z"/><path d="M9 10c-2 1-2 3 0 4m6-4c2 1 2 3 0 4"/>',
+ layers:'<path d="m12 2 10 6-10 6L2 8zm-10 11 10 6 10-6m-20 5 10 6 10-6"/>',
+ target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+ scale:'<path d="M12 3v18M4 7h16M7 7l-4 8h8zm10 0-4 8h8zM7 21h10"/>',
+ puzzle:'<path d="M3 3h7c-1 4 5 4 4 0h7v7c-4-1-4 5 0 4v7h-7c1-4-5-4-4 0H3v-7c4 1 4-5 0-4z"/>',
+ cloud:'<path d="M6 19h13a4 4 0 0 0 0-8 7 7 0 0 0-13-2 5 5 0 0 0 0 10z"/>',
+ check:'<circle cx="12" cy="12" r="9"/><path d="m7 12 3 3 7-7"/>',
+ code:'<path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-14-3 18"/>',
+ people:'<circle cx="8" cy="7" r="3"/><circle cx="17" cy="8" r="2"/><path d="M2 20c0-5 2-8 6-8s6 3 6 8m1-7c4 0 7 3 7 7"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M10 2h4l1 3 3 1 3-1 2 4-3 2v3l3 2-2 4-3-1-3 1-1 3h-4l-1-3-3-1-3 1-2-4 3-2v-3L1 9l2-4 3 1 3-1z"/>',
+ arrow:'<path d="M4 12h16m-7-7 7 7-7 7"/>'
+};
+const iconGroups={bot:'Agentic AI|AI Agents|Copilot|AI-Native',database:'RAG|Vector Database|Retrieval-Augmented Generation|Data Readiness',person:'Human in the Loop',network:'Multi-Agent Systems|Knowledge Graph',shield:'Guardrails|Responsible AI|Trustworthy AI',plug:'MCP|AI Integration|Tool Calling',search:'Semantic Search|Use Case Discovery',chat:'Prompt Engineering|Prompt Library',nodes:'AI Orchestration|AI Workflow|AI Automation',wrench:'Fine-Tuning',graph:'AI Readiness|AI Adoption|AI at Scale',brain:'Embeddings|Foundation Model|Generative AI',scale:'AI Governance',target:'Proof of Concept|AI Use Cases|AI Strategy|AI Roadmap',sliders:'Model-Agnostic|Model Evaluation',people:'AI Enablement|AI Literacy|AI Center of Excellence',cloud:'AI Platform|Enterprise AI',gear:'AI Operating Model|AI Factory',spark:'AI Transformation|AI-Powered',check:'LLM-as-a-Judge',layers:'Context Engineering',code:'Vibe Coding',arrow:'AI-First',puzzle:'AI Ecosystem'};
+const iconByTerm={};
+Object.entries(iconGroups).forEach(([icon,names])=>names.split('|').forEach(n=>iconByTerm[n]=icon));
+
+const FREE='FREIFELD', CENTER=12;
+function makeIcon(term){
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+ svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('class','term-icon');svg.setAttribute('aria-hidden','true');
+ svg.innerHTML=shapes[iconByTerm[term]||'spark']; // nur feste, eingebettete Formen
+ return svg;
+}
+
+/* ---------- Karten-ID = Seed: gleiche ID ergibt immer dieselbe Karte ---------- */
+const ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 Zeichen, ohne I/O/0/1
+const ID_RE=/^[A-HJ-NP-Z2-9]{6}$/;
+function randomId(){const a=new Uint32Array(6);crypto.getRandomValues(a);return Array.from(a,n=>ALPHABET[n%32]).join('')} // 2^32 ist durch 32 teilbar → gleichverteilt
+function hash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function buildCard(id){
+ const rnd=mulberry32(hash(id)), a=[...pool];
+ for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+ const picked=[], used=new Set();
+ for(const t of a){
+  if(picked.length===24)break;
+  const group=sameMeaning.find(g=>g.includes(t));
+  if(group&&group.some(x=>used.has(x)))continue;
+  used.add(t);picked.push(t);
+ }
+ picked.splice(CENTER,0,FREE);
+ return picked;
+}
+
+/* ---------- Gewinnlinien ---------- */
+const LINES=(()=>{const l=[];for(let r=0;r<5;r++)l.push([0,1,2,3,4].map(c=>5*r+c));for(let c=0;c<5;c++)l.push([0,1,2,3,4].map(r=>5*r+c));l.push([0,6,12,18,24],[4,8,12,16,20]);return l})();
+
+/* ---------- Zustand (Markierungen bleiben bei Reload erhalten, falls Speicher verfügbar) ---------- */
+const STORE='ki-bingo:last';
+let cardId='', cells=[], marked=new Set([CENTER]), buttons=[];
+function save(){try{localStorage.setItem(STORE,JSON.stringify({id:cardId,marks:[...marked].filter(i=>i!==CENTER)}))}catch(e){}}
+function restore(id){
+ try{const s=JSON.parse(localStorage.getItem(STORE)||'null');
+  if(s&&s.id===id&&Array.isArray(s.marks))return new Set([CENTER,...s.marks.filter(n=>Number.isInteger(n)&&n>=0&&n<25)]);
+ }catch(e){}
+ return new Set([CENTER]);
+}
+function lastStoredId(){try{const s=JSON.parse(localStorage.getItem(STORE)||'null');return s&&ID_RE.test(s.id)?s.id:null}catch(e){return null}}
+
+/* ---------- Darstellung ---------- */
+const board=document.getElementById('board'), statusEl=document.getElementById('status');
+function loadCard(id){
+ cardId=id;cells=buildCard(id);marked=restore(id);
+ board.replaceChildren();
+ buttons=cells.map((term,i)=>{
+  const b=document.createElement('button');
+  b.type='button';b.className='cell'+(i===CENTER?' free':'');
+  b.appendChild(makeIcon(term));
+  const label=document.createElement('span');label.className='term-label';label.textContent=term;
+  if(term!==FREE)label.lang='en'; // englische Silbentrennung für englische Begriffe
+  b.appendChild(label);
+  if(i===CENTER){b.disabled=true;b.setAttribute('aria-label','Freifeld, immer markiert')}
+  else b.addEventListener('click',()=>toggle(i));
+  board.appendChild(b);return b;
+ });
+ document.getElementById('cardId').textContent=id;
+ document.getElementById('printId').textContent=id;
+ try{if(location.hash.slice(1)!==id)history.replaceState(null,'','#'+id)}catch(e){}
+ update();save();
+}
+function toggle(i){marked.has(i)?marked.delete(i):marked.add(i);update();save()}
+function update(){
+ const winning=LINES.filter(l=>l.every(i=>marked.has(i))), winCells=new Set(winning.flat());
+ buttons.forEach((b,i)=>{
+  const on=marked.has(i);
+  b.classList.toggle('marked',on);b.classList.toggle('win',winCells.has(i));
+  if(i!==CENTER)b.setAttribute('aria-pressed',String(on));
+ });
+ const w=winning.length;
+ statusEl.textContent=w?`BINGO! ${w} vollständige Reihe${w===1?'':'n'}!`:`${marked.size-1} von 24 Begriffen markiert`;
+}
+
+/* ---------- Zwei-Klick-Bestätigung statt confirm() (funktioniert auch eingebettet) ---------- */
+function guarded(btn,label,action){
+ let armed=false,timer;
+ btn.addEventListener('click',()=>{
+  if(marked.size<=1||armed){clearTimeout(timer);armed=false;btn.textContent=label;btn.classList.remove('confirm');action();return}
+  armed=true;btn.textContent='Sicher? Nochmal klicken';btn.classList.add('confirm');
+  timer=setTimeout(()=>{armed=false;btn.textContent=label;btn.classList.remove('confirm')},3000);
+ });
+}
+guarded(document.getElementById('new'),'↻ Neue Karte',()=>{try{localStorage.removeItem(STORE)}catch(e){}loadCard(randomId())});
+guarded(document.getElementById('reset'),'Markierungen löschen',()=>{marked=new Set([CENTER]);update();save()});
+
+/* Drucken: in eingebetteten (sandboxed) Ansichten blockiert → Hinweis statt toter Button */
+const embedded=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+if(embedded){document.getElementById('print').style.display='none';document.getElementById('printHint').style.display='block'}
+else document.getElementById('print').addEventListener('click',()=>window.print());
+
+/* ---------- Start: ID aus URL (#ABC123), sonst letzte Karte, sonst neue ---------- */
+function idFromHash(){const h=location.hash.slice(1).toUpperCase();return ID_RE.test(h)?h:null}
+window.addEventListener('hashchange',()=>{const id=idFromHash();if(id&&id!==cardId)loadCard(id)});
+loadCard(idFromHash()||lastStoredId()||randomId());
+</script>
+</body>
+</html>
